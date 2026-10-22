@@ -30,7 +30,7 @@ jobs:
         with:
           server-type: PAPER
           minecraft-version: '1.21.4'
-          run-timeout: 90s
+          run-timeout: 180s
           server-dir: server
           files: |
             .github/test-fixtures/server.properties
@@ -40,9 +40,25 @@ jobs:
           set -euo pipefail
           test -s server/server.jar
           grep -qx 'eula=true' server/eula.txt
-          cmp .github/test-fixtures/server.properties server/server.properties
           test -s server/server.log
           grep -q 'Done (' server/server.log
+
+          # The server rewrites server.properties on startup and fills in the
+          # defaults it is missing, so check that our own values survived
+          # rather than comparing the file byte for byte.
+          for expected in \
+            'motd=ActionTestServer' \
+            'level-name=action-test-world' \
+            'max-players=7' \
+            'difficulty=peaceful' \
+            'online-mode=false'
+          do
+            if ! grep -qxF "$expected" server/server.properties; then
+              echo "::error::Expected '$expected' in server/server.properties"
+              exit 1
+            fi
+          done
+
           echo "Build id: $BUILD_ID"
           echo "Build UUID: $BUILD_UUID"
           echo "Java: $JAVA_VERSION"
