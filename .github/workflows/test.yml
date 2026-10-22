@@ -6,6 +6,12 @@ on:
       - '**'
   pull_request:
   workflow_dispatch:
+    inputs:
+      upload-artifact:
+        description: 'Upload server directory as an artifact'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -34,6 +40,7 @@ jobs:
           minecraft-version: '1.21.4'
           run-timeout: 180s
           server-dir: server
+          upload-artifact: false
           files: |
             .github/test-fixtures/server.properties
 
@@ -71,7 +78,7 @@ jobs:
           MC_VERSION: ${{ steps.minecraft.outputs.mc-version }}
 
       - name: Upload test server artifact
-        if: always()
+        if: always() && (inputs.upload-artifact == true || inputs.upload-artifact == 'true')
         uses: actions/upload-artifact@v4
         with:
           name: test-paper-server-${{ github.run_id }}
