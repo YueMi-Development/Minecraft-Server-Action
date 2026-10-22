@@ -99,14 +99,14 @@ runs:
       env:
         BUILD_ID: ${{ steps.resolve.outputs.build-id }}
         SERVER_DIR: ${{ steps.resolve.outputs.server-path }}
-      run: "$GITHUB_ACTION_PATH/scripts/install.sh"
+      run: bash "$GITHUB_ACTION_PATH/scripts/install.sh"
 
     - name: Copy files
       shell: bash
       env:
         FILES: ${{ inputs.files }}
         SERVER_DIR: ${{ steps.resolve.outputs.server-path }}
-      run: "$GITHUB_ACTION_PATH/scripts/copy-files.sh"
+      run: bash "$GITHUB_ACTION_PATH/scripts/copy-files.sh"
 
     - name: Accept EULA
       shell: bash
@@ -126,7 +126,7 @@ runs:
         RUN_TIMEOUT: ${{ inputs.run-timeout }}
         MIN_MEMORY: ${{ inputs.min-memory }}
         MAX_MEMORY: ${{ inputs.max-memory }}
-      run: "$GITHUB_ACTION_PATH/scripts/run-server.sh"
+      run: bash "$GITHUB_ACTION_PATH/scripts/run-server.sh"
 
     - name: Upload artifact
       if: always() && inputs.upload-artifact == 'true'
