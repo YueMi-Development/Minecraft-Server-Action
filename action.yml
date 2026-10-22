@@ -21,7 +21,7 @@ inputs:
     default: 'latest'
   build:
     description: >-
-      Pin a specific build, either its number (e.g. "232") or its UUID.
+      Pin a specific build, either its name (e.g. "#232") or its UUID.
       Empty installs the newest build for the requested version.
     required: false
     default: ''
@@ -97,7 +97,6 @@ runs:
     - name: Download server
       shell: bash
       env:
-        BUILD_ID: ${{ steps.resolve.outputs.build-id }}
         SERVER_DIR: ${{ steps.resolve.outputs.server-path }}
       run: bash "$GITHUB_ACTION_PATH/scripts/install.sh"
 

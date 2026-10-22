@@ -30,7 +30,7 @@ Pin to `v1.0.0` instead of `v1` to pin this exact release.
 | --- | --- | --- |
 | `server-type` | `PAPER` | Server type, case-insensitive. |
 | `minecraft-version` | `latest` | Version, e.g. `1.21.4`, or `latest` / `latest-snapshot`. |
-| `build` | `''` | Pin a build number or UUID. Empty = newest build. |
+| `build` | `''` | Pin a build name (e.g. `#232`) or UUID. Empty = newest build. |
 | `java-version` | `''` | Java version. Empty = detected automatically. |
 | `files` | `''` | Newline-separated repo paths to copy into the server dir. |
 | `server-dir` | `server` | Directory the server runs in. |
@@ -43,7 +43,7 @@ Pin to `v1.0.0` instead of `v1` to pin this exact release.
 
 | Output | Description |
 | --- | --- |
-| `build-id` | Resolved build id. |
+| `build-id` | Resolved build UUID. |
 | `build-uuid` | Resolved build UUID. |
 | `java-version` | Java version used. |
 | `mc-version` | Minecraft version installed. |
@@ -51,10 +51,8 @@ Pin to `v1.0.0` instead of `v1` to pin this exact release.
 
 ## Server types
 
-`VANILLA`, `PAPER`, `PUFFERFISH`, `SPIGOT`, `FOLIA`, `PURPUR`, `WATERFALL`, `VELOCITY`,
-`FABRIC`, `BUNGEECORD`, `QUILT`, `FORGE`, `NEOFORGE`, `MOHIST`, `ARCLIGHT`, `SPONGE`,
-`LEAVES`, `CANVAS`, `ASPAPER`, `LEGACY_FABRIC`, `LOOHP_LIMBO`, `NANOLIMBO`, `DIVINEMC`,
-`MAGMA`, `LEAF`, `VELOCITY_CTD`, `YOUER`, `PLUTO`
+Any type mcjars supports. The list is validated by the API itself, so new types work without
+updating the action — see `GET https://mcjars.app/api/v2/types` for the current set.
 
 ## Notes
 
