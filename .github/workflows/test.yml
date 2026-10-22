@@ -2,6 +2,10 @@ name: Test custom action
 
 on:
   push:
+    branches-ignore:
+      - main
+    tags-ignore:
+      - '**'
   pull_request:
   workflow_dispatch:
 
