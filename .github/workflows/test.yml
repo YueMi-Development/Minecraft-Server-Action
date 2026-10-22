@@ -1,0 +1,58 @@
+name: Test custom action
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  paper:
+    name: Paper end-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check shell syntax
+        run: bash -n scripts/*.sh
+
+      - name: Run action
+        id: minecraft
+        uses: YueMi-Development/Minecraft-Server-Action@v1
+        with:
+          server-type: PAPER
+          minecraft-version: '1.21.4'
+          run-timeout: 90s
+          server-dir: server
+          files: |
+            .github/test-fixtures/server.properties
+
+      - name: Verify preparation
+        run: |
+          set -euo pipefail
+          test -s server/server.jar
+          grep -qx 'eula=true' server/eula.txt
+          cmp .github/test-fixtures/server.properties server/server.properties
+          test -s server/server.log
+          grep -q 'Done (' server/server.log
+          echo "Build id: $BUILD_ID"
+          echo "Build UUID: $BUILD_UUID"
+          echo "Java: $JAVA_VERSION"
+        env:
+          BUILD_ID: ${{ steps.minecraft.outputs.build-id }}
+          BUILD_UUID: ${{ steps.minecraft.outputs.build-uuid }}
+          JAVA_VERSION: ${{ steps.minecraft.outputs.java-version }}
+          MC_VERSION: ${{ steps.minecraft.outputs.mc-version }}
+
+      - name: Upload test server artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-paper-server
+          path: server/
+          if-no-files-found: warn
+          retention-days: 1

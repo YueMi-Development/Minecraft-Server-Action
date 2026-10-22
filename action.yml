@@ -1,0 +1,138 @@
+name: 'Minecraft Server'
+description: 'Download a Minecraft server from mcjars, accept the EULA, apply configuration files and run it.'
+author: 'YueMi-Development'
+
+branding:
+  icon: 'box'
+  color: 'green'
+
+inputs:
+  server-type:
+    description: >-
+      Server type to install, e.g. VANILLA, PAPER, SPIGOT, FABRIC, FORGE, NEOFORGE.
+      Case-insensitive. See the README for the full list.
+    required: false
+    default: 'PAPER'
+  minecraft-version:
+    description: >-
+      Minecraft version to install, e.g. "1.21.4". Use "latest" or
+      "latest-snapshot" to track the newest release.
+    required: false
+    default: 'latest'
+  build:
+    description: >-
+      Pin a specific build, either its number (e.g. "232") or its UUID.
+      Empty installs the newest build for the requested version.
+    required: false
+    default: ''
+  java-version:
+    description: >-
+      Java version to use. Empty detects the version the Minecraft release needs.
+    required: false
+    default: ''
+  files:
+    description: >-
+      Newline-separated, repository-relative paths to copy into the server
+      directory, e.g. "server.properties" or "plugins/".
+    required: false
+    default: ''
+  server-dir:
+    description: 'Directory the server is installed into and runs from.'
+    required: false
+    default: 'server'
+  run-timeout:
+    description: 'How long the server may run before it is stopped gracefully.'
+    required: false
+    default: '10m'
+  min-memory:
+    description: 'Initial JVM heap size, e.g. 512M.'
+    required: false
+    default: '512M'
+  max-memory:
+    description: 'Maximum JVM heap size, e.g. 2G.'
+    required: false
+    default: '2G'
+  upload-artifact:
+    description: 'Upload the server directory (logs, world, config) as an artifact.'
+    required: false
+    default: 'true'
+
+outputs:
+  build-id:
+    description: 'Numeric id of the resolved mcjars build.'
+    value: ${{ steps.resolve.outputs.build-id }}
+  build-uuid:
+    description: 'UUID of the resolved mcjars build.'
+    value: ${{ steps.resolve.outputs.build-uuid }}
+  java-version:
+    description: 'Java version the server requires.'
+    value: ${{ steps.resolve.outputs.java-version }}
+  mc-version:
+    description: 'Concrete Minecraft version that was installed.'
+    value: ${{ steps.resolve.outputs.mc-version }}
+  server-path:
+    description: 'Absolute path of the server directory.'
+    value: ${{ steps.resolve.outputs.server-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Resolve build
+      id: resolve
+      shell: bash
+      env:
+        INPUT_SERVER_TYPE: ${{ inputs.server-type }}
+        INPUT_MINECRAFT_VERSION: ${{ inputs.minecraft-version }}
+        INPUT_BUILD: ${{ inputs.build }}
+        INPUT_JAVA_VERSION: ${{ inputs.java-version }}
+        INPUT_SERVER_DIR: ${{ inputs.server-dir }}
+      run: python3 "$GITHUB_ACTION_PATH/scripts/resolve-build.py"
+
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: ${{ steps.resolve.outputs.java-version }}
+
+    - name: Download server
+      shell: bash
+      env:
+        BUILD_ID: ${{ steps.resolve.outputs.build-id }}
+        SERVER_DIR: ${{ steps.resolve.outputs.server-path }}
+      run: "$GITHUB_ACTION_PATH/scripts/install.sh"
+
+    - name: Copy files
+      shell: bash
+      env:
+        FILES: ${{ inputs.files }}
+        SERVER_DIR: ${{ steps.resolve.outputs.server-path }}
+      run: "$GITHUB_ACTION_PATH/scripts/copy-files.sh"
+
+    - name: Accept EULA
+      shell: bash
+      env:
+        SERVER_DIR: ${{ steps.resolve.outputs.server-path }}
+      run: |
+        cat > "$SERVER_DIR/eula.txt" <<'EOF'
+        #By changing the setting below to TRUE you are indicating your agreement to our EULA.
+        #You can find the EULA at https://aka.ms/MinecraftEULA
+        eula=true
+        EOF
+
+    - name: Run server
+      shell: bash
+      env:
+        SERVER_DIR: ${{ steps.resolve.outputs.server-path }}
+        RUN_TIMEOUT: ${{ inputs.run-timeout }}
+        MIN_MEMORY: ${{ inputs.min-memory }}
+        MAX_MEMORY: ${{ inputs.max-memory }}
+      run: "$GITHUB_ACTION_PATH/scripts/run-server.sh"
+
+    - name: Upload artifact
+      if: always() && inputs.upload-artifact == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: minecraft-server-${{ inputs.server-type }}-${{ inputs.minecraft-version }}
+        path: ${{ steps.resolve.outputs.server-path }}
+        if-no-files-found: 'warn'
+        retention-days: 7
